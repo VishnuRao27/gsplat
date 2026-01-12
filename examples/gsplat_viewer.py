@@ -59,12 +59,16 @@ class GsplatViewer(Viewer):
         render_fn: Callable,
         output_dir: Path,
         mode: Literal["rendering", "training"] = "rendering",
+        on_toggle_record: Callable | None = None,
     ):
+        self._on_toggle_record = on_toggle_record
+
         super().__init__(server, render_fn, output_dir, mode)
         server.gui.set_panel_label("gsplat viewer")
 
     def _init_rendering_tab(self):
         self.render_tab_state = GsplatRenderTabState()
+        self.render_tab_state.preview_render = True
         self._rendering_tab_handles = {}
         self._rendering_folder = self.server.gui.add_folder("Rendering")
 
@@ -237,6 +241,15 @@ class GsplatViewer(Viewer):
                 def _(_) -> None:
                     self.render_tab_state.camera_model = camera_model_dropdown.value
                     self.rerender(_)
+
+                record_button = server.gui.add_button(
+                    "⏺ Record",
+                    hint="Toggle frame recording",
+                )
+                @record_button.on_click
+                def _(_):
+                    if self._on_toggle_record is not None:
+                        self._on_toggle_record()
 
         self._rendering_tab_handles.update(
             {
