@@ -60,14 +60,17 @@ class GsplatViewer(Viewer):
         output_dir: Path,
         mode: Literal["rendering", "training"] = "rendering",
         on_toggle_record: Callable | None = None,
+        data_max_sh_degree: int = 5,
     ):
         self._on_toggle_record = on_toggle_record
+        self._data_max_sh_degree = data_max_sh_degree
 
         super().__init__(server, render_fn, output_dir, mode)
         server.gui.set_panel_label("gsplat viewer")
 
     def _init_rendering_tab(self):
         self.render_tab_state = GsplatRenderTabState()
+        self.render_tab_state.max_sh_degree = self._data_max_sh_degree
         self.render_tab_state.preview_render = True
         self._rendering_tab_handles = {}
         self._rendering_folder = self.server.gui.add_folder("Rendering")
@@ -93,9 +96,9 @@ class GsplatViewer(Viewer):
                     "Max SH",
                     initial_value=self.render_tab_state.max_sh_degree,
                     min=0,
-                    max=5,
+                    max=self._data_max_sh_degree,
                     step=1,
-                    hint="Maximum SH degree used",
+                    hint=f"Maximum SH degree (data supports up to {self._data_max_sh_degree})",
                 )
 
                 @max_sh_degree_number.on_update
