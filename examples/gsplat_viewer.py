@@ -34,6 +34,7 @@ class GsplatRenderTabState(RenderTabState):
     near_plane: float = 1e-2
     far_plane: float = 1e2
     radius_clip: float = 0.0
+    radius_max: float = 0.0
     eps2d: float = 0.3
     backgrounds: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     render_mode: Literal[
@@ -138,6 +139,20 @@ class GsplatViewer(Viewer):
                 @radius_clip_slider.on_update
                 def _(_) -> None:
                     self.render_tab_state.radius_clip = radius_clip_slider.value
+                    self.rerender(_)
+
+                radius_max_slider = server.gui.add_number(
+                    "Radius Max",
+                    initial_value=self.render_tab_state.radius_max,
+                    min=0.0,
+                    max=1000.0,
+                    step=1.0,
+                    hint="Keep only Gaussians with 2D radius below this value (0 = disabled).",
+                )
+
+                @radius_max_slider.on_update
+                def _(_) -> None:
+                    self.render_tab_state.radius_max = radius_max_slider.value
                     self.rerender(_)
 
                 eps2d_slider = server.gui.add_number(
@@ -260,6 +275,7 @@ class GsplatViewer(Viewer):
                 "rendered_gs_count_number": rendered_gs_count_number,
                 "near_far_plane_vec2": near_far_plane_vec2,
                 "radius_clip_slider": radius_clip_slider,
+                "radius_max_slider": radius_max_slider,
                 "eps2d_slider": eps2d_slider,
                 "backgrounds_slider": backgrounds_slider,
                 "render_mode_dropdown": render_mode_dropdown,
