@@ -255,7 +255,7 @@ def generate_interpolated_path(
         """Runs multidimensional B-spline interpolation on the input points."""
         sh = points.shape
         pts = np.reshape(points, (sh[0], -1))
-        k = min(k, sh[0] - 1)
+        k = max(1, min(k, sh[0] - 1))
         tck, _ = scipy.interpolate.splprep(pts.T, k=k, s=s)
         u = np.linspace(0, 1, n, endpoint=False)
         new_points = np.array(scipy.interpolate.splev(u, tck))

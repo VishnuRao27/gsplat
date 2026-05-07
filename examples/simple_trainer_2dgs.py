@@ -55,8 +55,10 @@ from nerfview import CameraState, RenderTabState, apply_float_colormap
 class Config:
     # Disable viewer
     disable_viewer: bool = False
-    # Path to the .pt file. If provide, it will skip training and render a video
+    # Path to the .pt file. If provide, it will skip training and render a video.
+    # Pass --resume alongside --ckpt to resume training from the checkpoint instead.
     ckpt: Optional[str] = None
+    resume: bool = False
 
     # Path to the Mip-NeRF 360 dataset
     data_dir: str = "data/360_v2/garden"
@@ -900,7 +902,14 @@ class Runner:
         device = self.device
 
         camtoworlds = self.parser.camtoworlds[5:-5]
-        camtoworlds = generate_interpolated_path(camtoworlds, 1)  # [N, 3, 4]
+        if len(camtoworlds) < 2:
+            print("Skipping trajectory rendering: not enough cameras after trimming.")
+            return
+        try:
+            camtoworlds = generate_interpolated_path(camtoworlds, 1)  # [N, 3, 4]
+        except ValueError as e:
+            print(f"Skipping trajectory rendering: spline interpolation failed ({e}).")
+            return
         camtoworlds = np.concatenate(
             [
                 camtoworlds,
@@ -1026,12 +1035,17 @@ def main(cfg: Config):
     runner = Runner(cfg)
 
     if cfg.ckpt is not None:
-        # run eval only
         ckpt = torch.load(cfg.ckpt, map_location=runner.device)
         for k in runner.splats.keys():
             runner.splats[k].data = ckpt["splats"][k]
-        runner.eval(step=ckpt["step"])
-        runner.render_traj(step=ckpt["step"])
+        if cfg.resume:
+            # Resume training from the checkpoint's splat state
+            print(f"Resuming training from: {cfg.ckpt}")
+            runner.train()
+        else:
+            # Eval-only (original behaviour)
+            runner.eval(step=ckpt["step"])
+            runner.render_traj(step=ckpt["step"])
     else:
         runner.train()
 

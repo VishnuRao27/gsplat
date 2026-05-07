@@ -216,6 +216,19 @@ class Parser:
             )
             image_files = sorted(_get_rel_paths(image_dir))
         colmap_to_image = dict(zip(colmap_files, image_files))
+
+        # Filter to images that are actually on disk (allows excluding sequences
+        # by simply removing them from the images/ folder).
+        on_disk = set(colmap_files)
+        present = [i for i, n in enumerate(image_names) if n in on_disk]
+        if len(present) < len(image_names):
+            n_dropped = len(image_names) - len(present)
+            print(f"[Parser] Skipping {n_dropped} images not found on disk "
+                  f"(kept {len(present)}/{len(image_names)}).")
+            image_names   = [image_names[i]   for i in present]
+            camtoworlds   = camtoworlds[present]
+            camera_ids    = [camera_ids[i]     for i in present]
+
         image_paths = [os.path.join(image_dir, colmap_to_image[f]) for f in image_names]
 
         # 3D points and {image_name -> [point_idx]}
